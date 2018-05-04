@@ -391,7 +391,7 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer user_data)
 
     case GST_MESSAGE_WARNING:
         is_warning = TRUE;
-
+        /* fallthru */
     case GST_MESSAGE_ERROR:
         if (is_warning) {
             message_type = "Warning";
@@ -760,6 +760,12 @@ static void update_helper_servers(OwrTransportAgent *transport_agent, guint stre
                 address, port, username, password, NICE_RELAY_TYPE_TURN_TCP);
             nice_agent_set_relay_info(priv->nice_agent, stream_id, NICE_COMPONENT_TYPE_RTCP,
                 address, port, username, password, NICE_RELAY_TYPE_TURN_TCP);
+            break;
+        case OWR_HELPER_SERVER_TYPE_TURN_TLS:
+            nice_agent_set_relay_info(priv->nice_agent, stream_id, NICE_COMPONENT_TYPE_RTP,
+                                      address, port, username, password, NICE_RELAY_TYPE_TURN_TLS);
+            nice_agent_set_relay_info(priv->nice_agent, stream_id, NICE_COMPONENT_TYPE_RTCP,
+                                      address, port, username, password, NICE_RELAY_TYPE_TURN_TLS);
             break;
         }
     }
@@ -3808,6 +3814,7 @@ static void handle_data_channel_message(OwrTransportAgent *transport_agent, guin
     if (data_channel_info->state != OWR_DATA_CHANNEL_STATE_OPEN) {
         /* This should never happen */
         g_critical("Received message before datachannel was established.");
+        g_rw_lock_reader_unlock(&data_channel_info->rw_mutex);
         goto end;
     }
 
